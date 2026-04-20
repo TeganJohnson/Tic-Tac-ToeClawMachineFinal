@@ -34,6 +34,44 @@
 #define XLIM_NEG      2
 
 // ----------------------------------------------------
+// Init to Run Crystasl
+// ----------------------------------------------------
+static void Clock_Init_HSE_48MHz(void)
+{
+    /* Enable HSE crystal oscillator */
+    RCC->CR |= RCC_CR_HSEON;
+    while (!(RCC->CR & RCC_CR_HSERDY)) {
+    }
+
+    /* One flash wait state and prefetch for 48 MHz */
+    FLASH->ACR = FLASH_ACR_PRFTBE | FLASH_ACR_LATENCY;
+
+    /* HSE as PLL source, HSE/PREDIV, PLL x6 => 8 MHz * 6 = 48 MHz */
+    RCC->CFGR &= ~(RCC_CFGR_SW |
+                   RCC_CFGR_HPRE |
+                   RCC_CFGR_PPRE |
+                   RCC_CFGR_PLLSRC |
+                   RCC_CFGR_PLLMUL);
+
+    RCC->CFGR |= RCC_CFGR_PLLSRC_HSE_PREDIV;
+    RCC->CFGR |= RCC_CFGR_PLLMUL6;
+
+    /* Enable PLL */
+    RCC->CR |= RCC_CR_PLLON;
+    while (!(RCC->CR & RCC_CR_PLLRDY)) {
+    }
+
+    /* Switch SYSCLK to PLL */
+    RCC->CFGR &= ~RCC_CFGR_SW;
+    RCC->CFGR |= RCC_CFGR_SW_PLL;
+    while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_PLL) {
+    }
+
+    SystemCoreClockUpdate();
+}
+
+
+// ----------------------------------------------------
 // Delay
 // ----------------------------------------------------
 static void delay_cycles(volatile uint32_t cycles)
@@ -54,7 +92,7 @@ void SysTick_Handler(void)
 static void SysTick_Init(void)
 {
     // Configure SysTick for 1ms interrupt (assuming 8MHz system clock)
-    SysTick->LOAD = 8000 - 1;
+    SysTick->LOAD = 48000 - 1;
     SysTick->VAL  = 0;
     SysTick->CTRL = (1 << 0) | (1 << 1) | (1 << 2);
 }
@@ -237,51 +275,6 @@ static void GPIO_Init(void)
                       (3 << (15*2)));
 }
 
-// void Motor_Init(void)
-// {
-//     // ------------------------------------------------------------------
-//     // Microstepping mode pins: PA0=M0, PA1=M1, PA2=M2
-//     // DRV8825 mode table:
-//     //   M0  M1  M2  -> resolution
-//     //   0   0   0   -> full step      (current setting)
-//     //   1   0   0   -> half step
-//     //   0   1   0   -> quarter step
-//     //   1   1   0   -> eighth step
-//     //   0   0   1   -> sixteenth step
-//     //   1   0   1   -> thirty-second step
-//     // Change the BSRR/BRR lines below to switch mode.
-//     // ------------------------------------------------------------------
-//     GPIOA->MODER &= ~((3 << (0*2)) | (3 << (1*2)) | (3 << (2*2)));
-//     GPIOA->MODER |=  ((1 << (0*2)) | (1 << (1*2)) | (1 << (2*2)));
-
-//     // Full step: M0=0, M1=0, M2=0
-//     GPIOA->BRR = (1 << 0) | (1 << 1) | (1 << 2);
-
-//     // ------------------------------------------------------------------
-//     // Shared enable pin: PB9, output, start HIGH (disabled)
-//     // DRV8825 EN is active LOW
-//     // ------------------------------------------------------------------
-//     MOTOR_EN_PORT->MODER &= ~(3 << (MOTOR_EN_PIN * 2));
-//     MOTOR_EN_PORT->MODER |=  (1 << (MOTOR_EN_PIN * 2));
-//     MOTOR_EN_PORT->BSRR   =  (1 << MOTOR_EN_PIN);
-
-//     // ------------------------------------------------------------------
-//     // STEP and DIR pins for all four axes
-//     // ------------------------------------------------------------------
-//     for (uint8_t i = 0; i < AXIS_COUNT; i++) {
-//         const motor_pins_t *p = &motor_pins[i];
-
-//         // STEP pin — output, start low
-//         p->step_port->MODER &= ~(3 << (p->step_pin * 2));
-//         p->step_port->MODER |=  (1 << (p->step_pin * 2));
-//         p->step_port->BRR    =  (1 << p->step_pin);
-
-//         // DIR pin — output, start low
-//         p->dir_port->MODER &= ~(3 << (p->dir_pin * 2));
-//         p->dir_port->MODER |=  (1 << (p->dir_pin * 2));
-//         p->dir_port->BRR    =  (1 << p->dir_pin);
-//     }
-// }
 
 static void SPI1_Init(void)
 {
@@ -586,6 +579,7 @@ int main(void)
     Motor_Init();
     Game_Init();
     Motor_Enable();
+    Clock_Init_HSE_48MHz();
     delay_ms(20);
     
     while(1) {
