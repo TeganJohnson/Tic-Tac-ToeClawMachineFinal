@@ -11,6 +11,8 @@
 // PC4  -> SPI1_SCK  (AF0)
 // PA5  -> SPI1_MOSI (AF0)
 
+#define DEBUG_SENSOR_SCREEN 0
+
 #define LCD_CS_GPIO     GPIOB
 #define LCD_CS_PIN      0
 #define LCD_RST_GPIO    GPIOC
@@ -137,10 +139,6 @@ static const sensor_out_t sensor_outputs[9] = {
     {GPIOB, 15},  // Cell 8
     {GPIOB, 12}   // Cell 9
 };
-
-#define TCS_PRESENCE_THRESHOLD    200
-#define TCS_COLOR_RATIO_PERCENT   140
-
 // ----------------------------------------------------
 // GPIO / SPI Init
 // ----------------------------------------------------
@@ -393,7 +391,7 @@ static void TCS_Init(void)
 {
     // 100% output scaling
     TCS_SetPin(TCS_S0_PIN, 1);
-    TCS_SetPin(TCS_S1_PIN, 1);
+    TCS_SetPin(TCS_S1_PIN, 0);
 
     // Default color select
     TCS_SetPin(TCS_S2_PIN, 0);
@@ -448,34 +446,34 @@ static void TCS_MeasureRawCounts_ForSensor(uint8_t sensor_index,
     *outB = CountPulsesOnPin(port, pin, window_ms);
 }
 
+// 100% scaling:
+// #define TCS_EMPTY_SUM_THRESHOLD   5500
+
+// 10% scaling:
+#define TCS_EMPTY_SUM_THRESHOLD   1200
+
+// 2% scaling:
+// #define TCS_EMPTY_SUM_THRESHOLD   115
+
 static cell_state_t classify_color_from_counts(uint32_t cR, uint32_t cG, uint32_t cB)
 {
-    uint32_t mx = cR;
-    if (cG > mx) mx = cG;
-    if (cB > mx) mx = cB;
+    uint32_t sum = cR + cG + cB;
 
-    if (mx < TCS_PRESENCE_THRESHOLD) {
+    // In your measurements, AIR has the largest total reading
+    if (sum > TCS_EMPTY_SUM_THRESHOLD) {
         return CELL_EMPTY;
     }
 
-    uint32_t second = cR;
-    if (mx == cR) {
-        second = (cG > cB) ? cG : cB;
-    } else if (mx == cG) {
-        second = (cR > cB) ? cR : cB;
-    } else {
-        second = (cR > cG) ? cR : cG;
+    // RED ball: red is much larger than both green and blue
+    if ((cR > (2 * cG)) && (cR > (2 * cB))) {
+        return CELL_PLAYER1_RED;
     }
 
-    if (second == 0) second = 1;
-    uint32_t percent = (mx * 100) / second;
-
-    if (percent < TCS_COLOR_RATIO_PERCENT) {
-        return CELL_UNKNOWN;
+    // BLUE ball: blue is only modestly larger than red/green in your data
+    if ((cB > cR) && (cB > cG)) {
+        return CELL_PLAYER2_BLUE;
     }
 
-    if (mx == cR) return CELL_PLAYER1_RED;
-    if (mx == cB) return CELL_PLAYER2_BLUE;
     return CELL_UNKNOWN;
 }
 
@@ -583,12 +581,108 @@ int main(void)
     LCD_Init();
     Joystick_ADC_Init();
     TCS_Init();
-    Motor_Init();
+    // Motor_Init();
     Game_Init();
-    Motor_Enable();
+    // Motor_Enable();
     delay_ms(20);
     
-    while(1) {
-        Game_Update();
+ #if DEBUG_SENSOR_SCREEN
+
+    LCD_FillRect(0, 0, 240, 320, COLOR_BLACK);
+
+    for (int i = 0; i < 9; i++)
+{
+    int row = i / 3;
+    int col = i % 3;
+
+    int x = 10 + col * 75;
+    int y = 20 + row * 90;
+
+    // Cell label
+    char cellLabel[4];
+    cellLabel[0] = 'C';
+    cellLabel[1] = '1' + i;
+    cellLabel[2] = '\0';
+
+    LCD_DrawString(x, y, cellLabel, COLOR_WHITE, COLOR_BLACK, 2);
+
+    // Static RGB labels
+    LCD_DrawString(x, y + 52, "R:", COLOR_WHITE, COLOR_BLACK, 1);
+    LCD_DrawString(x, y + 64, "G:", COLOR_WHITE, COLOR_BLACK, 1);
+    LCD_DrawString(x, y + 76, "B:", COLOR_WHITE, COLOR_BLACK, 1);
+}
+
+    // put your old sensor debug loop here
+    while (1)
+{
+    uint32_t cR[9], cG[9], cB[9];
+    cell_state_t state[9];
+    char numBuf[16];
+
+    for (int i = 0; i < 9; i++)
+    {
+        int row = i / 3;
+        int col = i % 3;
+
+        int x = 10 + col * 75;
+        int y = 20 + row * 90;
+
+        TCS_MeasureRawCounts_ForSensor(i, 50, &cR[i], &cG[i], &cB[i]);
+        state[i] = classify_color_from_counts(cR[i], cG[i], cB[i]);
+
+        // Clear only the changing area for this cell
+        // This leaves the "C#", "R:", "G:", and "B:" labels alone
+        LCD_FillRect(x, y + 20, 60, 60, COLOR_BLACK);
+
+        // State label
+        const char *slabel = "";
+        uint16_t scolor = COLOR_YELLOW;
+
+        if (state[i] == CELL_EMPTY)
+        {
+            slabel = "E";
+            scolor = COLOR_WHITE;
+        }
+        else if (state[i] == CELL_PLAYER1_RED)
+        {
+            slabel = "R";
+            scolor = COLOR_RED;
+        }
+        else if (state[i] == CELL_PLAYER2_BLUE)
+        {
+            slabel = "B";
+            scolor = COLOR_BLUE;
+        }
+        else
+        {
+            slabel = "?";
+            scolor = COLOR_YELLOW;
+        }
+
+        LCD_DrawString(x, y + 20, (char *)slabel, scolor, COLOR_BLACK, 2);
+
+        // R value
+        u16_to_str((uint16_t)cR[i], numBuf);
+        LCD_DrawString(x + 14, y + 52, numBuf, COLOR_RED, COLOR_BLACK, 1);
+
+        // G value
+        u16_to_str((uint16_t)cG[i], numBuf);
+        LCD_DrawString(x + 14, y + 64, numBuf, COLOR_GREEN, COLOR_BLACK, 1);
+
+        // B value
+        u16_to_str((uint16_t)cB[i], numBuf);
+        LCD_DrawString(x + 14, y + 76, numBuf, COLOR_BLUE, COLOR_BLACK, 1);
     }
+
+    delay_ms(200);
+}
+#else
+
+    while (1)
+    {
+        Game_Update();
+        delay_ms(20);
+    }
+#endif
+    
 }
