@@ -25,8 +25,8 @@
 #define JOY_GPIO        GPIOB
 #define JOY_BTN_PIN     1
 
-#define JOY_X_CHANNEL   ADC_CHSELR_CHSEL0  // PB10 -> ADC channel 11 PA0 - 0
-#define JOY_Y_CHANNEL   ADC_CHSELR_CHSEL1  // PB2  -> ADC channel 12 (if wired, else verify) PA1 - 1
+#define JOY_X_CHANNEL   ADC_CHSELR_CHSEL0  // PA0 - 0
+#define JOY_Y_CHANNEL   ADC_CHSELR_CHSEL1  // PA1 - 1
 
 #define X_LIMIT_GPIO    GPIOA
 #define X_LIMIT_PIN     11
