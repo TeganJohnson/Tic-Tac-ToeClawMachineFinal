@@ -20,6 +20,7 @@ extern void Display_ShowWinner(player_t winner);
 extern void Display_ShowDraw(void);
 
 extern void Motor_Step(uint8_t axis, uint8_t dir, uint32_t steps);
+extern void Display_Current_Timer(uint32_t time_remaining_ms);
 
 // If these already exist in another file, keep these as externs.
 // If not, replace them with static stub implementations instead.
@@ -88,6 +89,8 @@ static uint8_t xdir = 0;
 static uint8_t ydir = 0;
 static uint8_t xlim = LIM_NONE;
 static uint8_t ylim = LIM_NONE;
+
+static uint32_t PLAYER_TURN_TIME_MS = 30000;
 
 // -----------------------------------------------------------------------------
 // Board helpers
@@ -325,13 +328,41 @@ static void Game_ChangeState(game_state_t new_state)
     }
 }
 
+static void Update_Timer(uint8_t direction)
+{
+    if (direction == 1) {
+        if (PLAYER_TURN_TIME_MS < 60000U) {
+            PLAYER_TURN_TIME_MS += 15000U;
+
+            if (PLAYER_TURN_TIME_MS > 60000U) {
+                PLAYER_TURN_TIME_MS = 60000U;
+            }
+        }
+    } else {
+        if (PLAYER_TURN_TIME_MS > 15000U) {
+            PLAYER_TURN_TIME_MS -= 15000U;
+
+            if (PLAYER_TURN_TIME_MS < 15000U) {
+                PLAYER_TURN_TIME_MS = 15000U;
+            }
+        }
+    }
+
+    Display_Current_Timer(PLAYER_TURN_TIME_MS);
+}
+
 // -----------------------------------------------------------------------------
 // State handlers
 // -----------------------------------------------------------------------------
 static void Handle_IdleState(void)
 {
+    uint16_t x, y;
+    uint8_t pressed;
+
+
     if (!Idle_IsDisplayed) {
         Display_ShowIdleScreen();
+        Display_Current_Timer(PLAYER_TURN_TIME_MS);
         Idle_IsDisplayed = 1;
     }
 
@@ -340,7 +371,20 @@ static void Handle_IdleState(void)
         game.active_player = PLAYER_1;
         Game_ChangeState(STATE_PLAYER1_TURN_GRAB);
     }
+
+    Joystick_Read(&x, &y, &pressed);
+
+    if (y > 3000) {
+        Update_Timer(1);
+        delay_ms(300);
+    }
+    else if (y < 1500) {
+        Update_Timer(0);
+        delay_ms(300);
+    }
 }
+
+
 
 static void Handle_PlayerTurnState_Grab(void)
 {

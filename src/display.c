@@ -180,9 +180,23 @@ void Display_ShowIdleScreen(void)
 {
     LCD_FillColor(COLOR_BLACK);
     LCD_DrawStringCentered("TIC TAC TOE", COLOR_YELLOW, COLOR_BLACK, 3);
+    LCD_DrawString(20, 60, "SELECT TURN TIME", COLOR_WHITE, COLOR_BLACK, 2);
     LCD_DrawString(40, 200, "PRESS BUTTON", COLOR_WHITE, COLOR_BLACK, 2);
     LCD_DrawString(60, 230, "TO START", COLOR_WHITE, COLOR_BLACK, 2);
 }
+
+
+void Display_Current_Timer(uint32_t time_remaining_ms)
+{
+    char time_str[8];
+    uint16_t seconds = (uint16_t)((time_remaining_ms + 999U) / 1000U);
+
+    u16_to_str(seconds, time_str);
+
+    LCD_FillRect(100, 100, 50, 24, COLOR_BLACK);
+    LCD_DrawString(100, 100, time_str, COLOR_YELLOW, COLOR_BLACK, 3);
+}
+
 
 
 //TODO:

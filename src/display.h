@@ -27,5 +27,6 @@ void Display_ShowPlayerTurn_Drop(player_t player, uint32_t time_remaining_ms, ui
 void Display_ShowCheckingBoard(void);
 void Display_ShowWinner(player_t winner);
 void Display_ShowDraw(void);
+void Display_Current_Timer(uint32_t time_remaining_ms);
 
 #endif
