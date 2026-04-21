@@ -28,8 +28,8 @@ extern void Claw_Drop_Token(void);
 // -----------------------------------------------------------------------------
 // Hardware / movement definitions
 // -----------------------------------------------------------------------------
-#define X_LIMIT_GPIO GPIOA
-#define X_LIMIT_PIN  11
+#define X_LIMIT_GPIO GPIOB
+#define X_LIMIT_PIN  3
 
 #define Y_LIMIT_GPIO GPIOB
 #define Y_LIMIT_PIN 4
