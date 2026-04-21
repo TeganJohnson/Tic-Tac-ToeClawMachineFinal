@@ -187,28 +187,60 @@ void Display_ShowIdleScreen(void)
 
 //TODO:
 //Make sure function only rewrites the seconds, not the entire display.
-void Display_ShowPlayerTurn(player_t player, uint32_t time_remaining_ms, uint8_t bg)
+void Display_ShowPlayerTurn_Drop(player_t player, uint32_t time_remaining_ms, uint8_t bg)
 {
-    if (bg) {
-        LCD_FillColor(COLOR_BLACK);
 
-        if (player == PLAYER_1) {
-            LCD_DrawString(40, 40, "PLAYER 1 TURN", COLOR_RED, COLOR_BLACK, 2);
-        } else {
-            LCD_DrawString(40, 40, "PLAYER 2 TURN", COLOR_BLUE, COLOR_BLACK, 2);
-        }
-
-        LCD_DrawString(60, 100, "TIME:", COLOR_WHITE, COLOR_BLACK, 3);
+    if (player == PLAYER_1 && bg) {
+        LCD_FillColor(COLOR_RED);
+        LCD_DrawString(40, 40, "PLAYER 1 TURN", COLOR_WHITE, COLOR_BLACK, 2);
         LCD_DrawString(30, 200, "USE JOYSTICK", COLOR_WHITE, COLOR_BLACK, 2);
         LCD_DrawString(20, 230, "PRESS TO DROP", COLOR_WHITE, COLOR_BLACK, 2);
+        LCD_DrawString(60, 100, "TIME:", COLOR_WHITE, COLOR_BLACK, 3);
+    } else if (bg) {
+        LCD_FillColor(COLOR_BLUE);
+        LCD_DrawString(40, 40, "PLAYER 2 TURN", COLOR_WHITE, COLOR_BLACK, 2);
+        LCD_DrawString(30, 200, "USE JOYSTICK", COLOR_WHITE, COLOR_BLACK, 2);
+        LCD_DrawString(20, 230, "PRESS TO DROP", COLOR_WHITE, COLOR_BLACK, 2);
+        LCD_DrawString(60, 100, "TIME:", COLOR_WHITE, COLOR_BLACK, 3);
     }
 
     char time_str[8];
     uint8_t seconds = (time_remaining_ms + 999) / 1000;
     u16_to_str(seconds, time_str);
 
-    // Always clear the countdown area before drawing the new value
-    LCD_FillRect(140, 100, 50, 24, COLOR_BLACK);
+    if (time_str[0] == '9') {
+        LCD_FillRect(140, 100, 33, 21, COLOR_BLACK);
+    }
+
+    LCD_DrawString(140, 100, time_str, COLOR_YELLOW, COLOR_BLACK, 3);
+}
+
+//Grab Function
+void Display_ShowPlayerTurn_Grab(player_t player, uint32_t time_remaining_ms, uint8_t bg)
+{
+
+    if (player == PLAYER_1 && bg) {
+        LCD_FillColor(COLOR_RED);
+        LCD_DrawString(40, 40, "PLAYER 1 TURN", COLOR_WHITE, COLOR_BLACK, 2);
+        LCD_DrawString(30, 200, "USE JOYSTICK", COLOR_WHITE, COLOR_BLACK, 2);
+        LCD_DrawString(20, 230, "PRESS TO Grab", COLOR_WHITE, COLOR_BLACK, 2);
+        LCD_DrawString(60, 100, "TIME:", COLOR_WHITE, COLOR_BLACK, 3);
+    } else if (bg) {
+        LCD_FillColor(COLOR_BLUE);
+        LCD_DrawString(40, 40, "PLAYER 2 TURN", COLOR_WHITE, COLOR_BLACK, 2);
+        LCD_DrawString(30, 200, "USE JOYSTICK", COLOR_WHITE, COLOR_BLACK, 2);
+        LCD_DrawString(20, 230, "PRESS TO Grab", COLOR_WHITE, COLOR_BLACK, 2);
+        LCD_DrawString(60, 100, "TIME:", COLOR_WHITE, COLOR_BLACK, 3);
+    }
+
+    char time_str[8];
+    uint8_t seconds = (time_remaining_ms + 999) / 1000;
+    u16_to_str(seconds, time_str);
+
+    if (time_str[0] == '9') {
+        LCD_FillRect(140, 100, 33, 21, COLOR_BLACK);
+    }
+
     LCD_DrawString(140, 100, time_str, COLOR_YELLOW, COLOR_BLACK, 3);
 }
 

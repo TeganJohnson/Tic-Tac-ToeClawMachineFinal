@@ -13,7 +13,8 @@ extern void Joystick_Read(uint16_t *x, uint16_t *y, uint8_t *pressed);
 extern void Hardware_ScanBoard(uint8_t scanned_board[9]);
 
 extern void Display_ShowIdleScreen(void);
-extern void Display_ShowPlayerTurn(player_t player, uint32_t time_remaining_ms, uint8_t bg);
+extern void Display_ShowPlayerTurn_Grab(player_t player, uint32_t time_remaining_ms, uint8_t bg);
+extern void Display_ShowPlayerTurn_Drop(player_t player, uint32_t time_remaining_ms, uint8_t bg);
 extern void Display_ShowCheckingBoard(void);
 extern void Display_ShowWinner(player_t winner);
 extern void Display_ShowDraw(void);
@@ -47,11 +48,11 @@ extern void Claw_Drop_Token(void);
 #endif
 
 #ifndef DIR_FORWARD
-#define DIR_FORWARD 1
+#define DIR_FORWARD 0
 #endif
 
 #ifndef DIR_BACKWARD
-#define DIR_BACKWARD 0
+#define DIR_BACKWARD 1
 #endif
 
 // -----------------------------------------------------------------------------
@@ -273,28 +274,28 @@ static void Game_ChangeState(game_state_t new_state)
         remaining_prev_sec = 0xFF;
         game.active_player = PLAYER_1;
         button_was_down = 1;   // require release before next press is accepted
-        Display_ShowPlayerTurn(PLAYER_1, PLAYER_TURN_TIME_MS, 1);
+        Display_ShowPlayerTurn_Grab(PLAYER_1, PLAYER_TURN_TIME_MS, 1);
         break;
 
     case STATE_PLAYER2_TURN_GRAB:
         remaining_prev_sec = 0xFF;
         game.active_player = PLAYER_2;
         button_was_down = 1;
-        Display_ShowPlayerTurn(PLAYER_2, PLAYER_TURN_TIME_MS, 1);
+        Display_ShowPlayerTurn_Grab(PLAYER_2, PLAYER_TURN_TIME_MS, 1);
         break;
 
     case STATE_PLAYER1_TURN_DROP:
         remaining_prev_sec = 0xFF;
         game.active_player = PLAYER_1;
         button_was_down = 1;
-        Display_ShowPlayerTurn(PLAYER_1, PLAYER_TURN_TIME_MS, 1);
+        Display_ShowPlayerTurn_Drop(PLAYER_1, PLAYER_TURN_TIME_MS, 1);
         break;
 
     case STATE_PLAYER2_TURN_DROP:
         remaining_prev_sec = 0xFF;
         game.active_player = PLAYER_2;
         button_was_down = 1;
-        Display_ShowPlayerTurn(PLAYER_2, PLAYER_TURN_TIME_MS, 1);
+        Display_ShowPlayerTurn_Drop(PLAYER_2, PLAYER_TURN_TIME_MS, 1);
         break;
 
     case STATE_CHECK_BOARD:
@@ -356,7 +357,7 @@ static void Handle_PlayerTurnState_Grab(void)
     Claw_UpdateFromJoystick(jx, jy);
 
     if (remaining_sec != remaining_prev_sec) {
-        Display_ShowPlayerTurn(game.active_player, remaining, 0);
+        Display_ShowPlayerTurn_Grab(game.active_player, remaining, 0);
         remaining_prev_sec = remaining_sec;
     }
 
@@ -403,7 +404,7 @@ static void Handle_PlayerTurnState_Drop(void)
     Claw_UpdateFromJoystick(jx, jy);
 
     if (remaining_sec != remaining_prev_sec) {
-        Display_ShowPlayerTurn(game.active_player, remaining, 0);
+        Display_ShowPlayerTurn_Drop(game.active_player, remaining, 0);
         remaining_prev_sec = remaining_sec;
     }
 

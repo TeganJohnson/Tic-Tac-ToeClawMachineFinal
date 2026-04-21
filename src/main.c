@@ -422,6 +422,7 @@ static void TCS_MeasureRawCounts_ForSensor(uint8_t sensor_index,
 {
     GPIO_TypeDef *port = sensor_outputs[sensor_index].port;
     uint8_t pin = sensor_outputs[sensor_index].pin;
+    window_ms = window_ms;
 
     // RED: S2=0, S3=0
     TCS_SetPin(TCS_S2_PIN, 0);
@@ -500,13 +501,6 @@ void Joystick_Test(void)
         if (pressed) LCD_DrawString(10, 92, "Button: PRESSED", COLOR_YELLOW, COLOR_BLACK, 2);
         else LCD_DrawString(10, 92, "Button: released", COLOR_WHITE, COLOR_BLACK, 2);
 
-        if (x > y && x > 3000) {
-            Motor_Step(AXIS_X, DIR_FORWARD, 10);
-        }
-        if (y > x && y > 3000) {
-            Motor_Step(AXIS_Y, DIR_FORWARD, 10);
-        }
-
         delay_ms(1);
     }
 }
@@ -520,20 +514,24 @@ void Joystick_and_Motor_Test(void)
     while (1) {
         Joystick_Read(&x, &y, &pressed);
 
-        if (x > y && x > 3000) {
-            Motor_Step(AXIS_X, DIR_FORWARD, 10);
-        }
-        else if (y > x && y > 3000) {
-            Motor_Step(AXIS_Y, DIR_FORWARD, 10);
-        }
-        else if (x < y && x < 1500) {
-            Motor_Step(AXIS_X, DIR_BACKWARD, 10);
-        }
-        else if (y < x && y < 1500) {
-            Motor_Step(AXIS_Y, DIR_BACKWARD, 10);
-        }
-        else if (pressed) {
-            Motor_Step(AXIS_Z, DIR_FORWARD, 10);
+        // if (x > y && x > 3000) {
+        //     Motor_Step(AXIS_X, DIR_FORWARD, 10);
+        // }
+        // else if (y > x && y > 3000) {
+        //     Motor_Step(AXIS_Y, DIR_FORWARD, 10);
+        // }
+        // else if (x < y && x < 1500) {
+        //     Motor_Step(AXIS_X, DIR_BACKWARD, 10);
+        // }
+        // else if (y < x && y < 1500) {
+        //     Motor_Step(AXIS_Y, DIR_BACKWARD, 10);
+        // }
+        // else if (pressed) {
+        //     Motor_Step(AXIS_Z, DIR_FORWARD, 10);
+        // }
+        while (pressed) {
+            Motor_MoveZ(DIR_FORWARD, 50);
+            delay_ms(100);
         }
 
         // delay_ms(0.001);
@@ -568,15 +566,16 @@ void Hardware_ScanBoard(uint8_t scanned_board[9])
 // ----------------------------------------------------
 int main(void)
 {
+    Clock_Init_HSE_48MHz();
     GPIO_Init();
     SPI1_Init();
     SysTick_Init();
     LCD_Init();
     Joystick_ADC_Init();
     TCS_Init();
-    // Motor_Init();
+    Motor_Init();
     Game_Init();
-    // Motor_Enable();
+    Motor_Enable();
     delay_ms(20);
     
  #if DEBUG_SENSOR_SCREEN
@@ -671,11 +670,9 @@ int main(void)
 }
 #else
 
-    while (1)
-    {
+    while (1){
         Game_Update();
-        delay_ms(20);
     }
+
 #endif
-    
 }

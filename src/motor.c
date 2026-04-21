@@ -37,7 +37,7 @@ extern void delay_ms(uint32_t ms);
 // -----------------------------------------------------------------------------
 static void delay_us(uint32_t us)
 {
-    volatile uint32_t cycles = us * 2;
+    volatile uint32_t cycles = us * 12;
     while (cycles--) __NOP();
 }
  
@@ -198,7 +198,7 @@ void Claw_Drop_Token(void) {
     Motor_MoveClaw(DIR_BACKWARD, OPEN_STEPS);
 
     if (DROP_STEPS != 0) {
-        Motor_MoveZ(DIR_FORWARD, DROP_RAISE_STEPS);
+        Motor_MoveZ(DIR_BACKWARD, DROP_RAISE_STEPS);
     }
 }
  
