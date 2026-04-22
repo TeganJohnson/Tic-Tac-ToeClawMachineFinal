@@ -31,6 +31,9 @@
 #define X_LIMIT_GPIO    GPIOA
 #define X_LIMIT_PIN     11
 
+#define Z_LIMIT_GPIO    GPIOB
+#define Z_LIMIT_PIN     7
+
 #define XLIM_NONE     0
 #define XLIM_POS      1
 #define XLIM_NEG      2
@@ -38,39 +41,33 @@
 // ----------------------------------------------------
 // Init to Run Crystasl
 // ----------------------------------------------------
-static void Clock_Init_HSE_48MHz(void)
+static void Clock_Init_HSI48MHz(void)
 {
-    /* Enable HSE crystal oscillator */
-    RCC->CR |= RCC_CR_HSEON;
-    while (!(RCC->CR & RCC_CR_HSERDY)) {
+    /* Enable HSI48 */
+    RCC->CR2 |= RCC_CR2_HSI48ON;
+    while (!(RCC->CR2 & RCC_CR2_HSI48RDY)) {
     }
 
     /* One flash wait state and prefetch for 48 MHz */
     FLASH->ACR = FLASH_ACR_PRFTBE | FLASH_ACR_LATENCY;
 
-    /* HSE as PLL source, HSE/PREDIV, PLL x6 => 8 MHz * 6 = 48 MHz */
-    RCC->CFGR &= ~(RCC_CFGR_SW |
-                   RCC_CFGR_HPRE |
-                   RCC_CFGR_PPRE |
-                   RCC_CFGR_PLLSRC |
-                   RCC_CFGR_PLLMUL);
+    /* Clear clock switch bits */
+    RCC->CFGR &= ~(RCC_CFGR_SW | RCC_CFGR_HPRE | RCC_CFGR_PPRE);
 
-    RCC->CFGR |= RCC_CFGR_PLLSRC_HSE_PREDIV;
-    RCC->CFGR |= RCC_CFGR_PLLMUL6;
+    /* No prescalers */
+    RCC->CFGR |= RCC_CFGR_HPRE_DIV1;
+    RCC->CFGR |= RCC_CFGR_PPRE_DIV1;
 
-    /* Enable PLL */
-    RCC->CR |= RCC_CR_PLLON;
-    while (!(RCC->CR & RCC_CR_PLLRDY)) {
-    }
-
-    /* Switch SYSCLK to PLL */
+    /* Switch SYSCLK to HSI48 */
     RCC->CFGR &= ~RCC_CFGR_SW;
-    RCC->CFGR |= RCC_CFGR_SW_PLL;
-    while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_PLL) {
+    RCC->CFGR |= RCC_CFGR_SW_HSI48;
+
+    while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_HSI48) {
     }
 
     SystemCoreClockUpdate();
 }
+
 
 
 // ----------------------------------------------------
@@ -338,9 +335,9 @@ void Joystick_Read(uint16_t *x, uint16_t *y, uint8_t *pressed)
 static void LCD_Reset(void)
 {
     LCD_RST_GPIO->BRR  = (1 << LCD_RST_PIN);
-    delay_cycles(100000);
+    delay_ms(20);
     LCD_RST_GPIO->BSRR = (1 << LCD_RST_PIN);
-    delay_cycles(100000);
+    delay_ms(120);
 }
 
 // NOT static because display.c uses this
@@ -361,12 +358,13 @@ static void LCD_Init(void)
 {
     LCD_Reset();
 
-    LCD_WriteCommand(0x01); delay_cycles(100000);   // Software reset
+    LCD_WriteCommand(0x01); delay_ms(120);   // Software reset
     LCD_WriteCommand(0x28);                         // Display OFF
     LCD_WriteCommand(0x3A); LCD_WriteData(0x55);   // 16-bit color
     LCD_WriteCommand(0x36); LCD_WriteData(0x48);   // Orientation
-    LCD_WriteCommand(0x11); delay_cycles(100000);  // Sleep OUT
+    LCD_WriteCommand(0x11); delay_ms(120);  // Sleep OUT
     LCD_WriteCommand(0x29);                        // Display ON
+    delay_ms(20);
 }
 
 // ----------------------------------------------------
@@ -566,7 +564,7 @@ void Hardware_ScanBoard(uint8_t scanned_board[9])
 // ----------------------------------------------------
 int main(void)
 {
-    Clock_Init_HSE_48MHz();
+    Clock_Init_HSI48MHz();
     GPIO_Init();
     SPI1_Init();
     SysTick_Init();
@@ -670,9 +668,20 @@ int main(void)
 }
 #else
 
-    while (1){
+    // LCD_DrawString(30, 200, "MICRO WORKING", COLOR_WHITE, COLOR_BLACK, 2);
+    // uint16_t x, y, pressed;
+    // pressed = 0;
+    // while (!pressed) {
+    //     Joystick_Read(&x,&y,&pressed);
+    // }
+    // Reset_Height();
+    // delay_ms(1000);
+    // Claw_Grab_Token();
+        
+    while(1) {
         Game_Update();
     }
+    
 
 #endif
 }

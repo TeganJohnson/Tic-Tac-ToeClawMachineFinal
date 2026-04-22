@@ -27,6 +27,9 @@ extern void Display_Current_Timer(uint32_t time_remaining_ms);
 extern void Claw_Grab_Token(void);
 extern void Claw_Drop_Token(void);
 
+#define Z_LIMIT_GPIO    GPIOB
+#define Z_LIMIT_PIN     7
+
 // -----------------------------------------------------------------------------
 // Hardware / movement definitions
 // -----------------------------------------------------------------------------
@@ -35,10 +38,6 @@ extern void Claw_Drop_Token(void);
 
 #define Y_LIMIT_GPIO GPIOB
 #define Y_LIMIT_PIN 4
-
-#define LIM_NONE 0
-#define LIM_POS  1
-#define LIM_NEG  2
 
 #ifndef AXIS_X
 #define AXIS_X 0
@@ -161,42 +160,6 @@ static void Board_UpdateFromScan(void)
     Board_RecountMoves();
 }
 
-// -----------------------------------------------------------------------------
-// Limit switch helpers
-// -----------------------------------------------------------------------------
-void X_Limit_Checker(uint8_t dir, uint8_t *xlim_prev)
-{
-    uint8_t xlim_current;
-
-    xlim_current = ((X_LIMIT_GPIO->IDR & (1 << X_LIMIT_PIN)) == 0);
-
-    if (!xlim_current && *xlim_prev) {
-        *xlim_prev = LIM_NONE;
-    }
-    else if (xlim_current && dir == DIR_FORWARD && !(*xlim_prev)) {
-        *xlim_prev = LIM_POS;
-    }
-    else if (xlim_current && dir == DIR_BACKWARD && !(*xlim_prev)) {
-        *xlim_prev = LIM_NEG;
-    }
-}
-
-void Y_Limit_Checker(uint8_t dir, uint8_t *ylim_prev)
-{
-    uint8_t ylim_current;
-
-    ylim_current = ((Y_LIMIT_GPIO->IDR & (1 << Y_LIMIT_PIN)) == 0);
-
-    if (!ylim_current && *ylim_prev) {
-        *ylim_prev = LIM_NONE;
-    }
-    else if (ylim_current && dir == DIR_FORWARD && !(*ylim_prev)) {
-        *ylim_prev = LIM_POS;
-    }
-    else if (ylim_current && dir == DIR_BACKWARD && !(*ylim_prev)) {
-        *ylim_prev = LIM_NEG;
-    }
-}
 
 // -----------------------------------------------------------------------------
 // Motion helper

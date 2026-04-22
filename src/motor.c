@@ -9,14 +9,14 @@ extern void delay_ms(uint32_t ms);
 // -----------------------------------------------------------------------------
 // Number of Steps to Lower/Raise to/from the Play Area
 // -----------------------------------------------------------------------------
-#define LOWER_STEPS 100
-#define RAISE_STEPS 100
+#define LOWER_STEPS 1400
+#define RAISE_STEPS 400
 
 // -----------------------------------------------------------------------------
 // Number of Steps to Close/Open the Claw
 // -----------------------------------------------------------------------------
-#define CLOSE_STEPS 10
-#define OPEN_STEPS 10 
+#define CLOSE_STEPS 200
+#define OPEN_STEPS 70
 
 // -----------------------------------------------------------------------------
 // Number of Steps to Set the Drop Height
@@ -29,6 +29,13 @@ extern void delay_ms(uint32_t ms);
 
 #define Y_LIMIT_GPIO GPIOB
 #define Y_LIMIT_PIN 4
+
+#define Z_LIMIT_GPIO    GPIOB
+#define Z_LIMIT_PIN     7
+
+#define LIM_NONE 0
+#define LIM_POS  1
+#define LIM_NEG  2
 
 // -----------------------------------------------------------------------------
 // Microsecond busy-wait
@@ -78,8 +85,9 @@ void gpio_pullup(GPIO_TypeDef *port, uint8_t pin) {
 // -----------------------------------------------------------------------------
 void Motor_Init(void)
 {
-    gpio_pullup(GPIOB, 3);
-    gpio_pullup(GPIOB, 4);
+    gpio_pullup(X_LIMIT_GPIO, X_LIMIT_PIN);
+    gpio_pullup(Y_LIMIT_GPIO, Y_LIMIT_PIN);
+    gpio_pullup(Z_LIMIT_GPIO, Z_LIMIT_PIN);
     
     // Enable pin — PB9 output, start HIGH (disabled)
     MOTOR_EN_PORT->MODER &= ~(3 << (MOTOR_EN_PIN * 2));
@@ -171,7 +179,7 @@ void Motor_Step(axis_t axis1, motor_dir_t dir, uint32_t steps)
     }
 
     //delay for DRV8825 setup
-    delay_us(2);
+    delay_us(5);
  
     for (uint32_t i = 0; i < steps; i++) {
         // Pulse STEP high
@@ -184,10 +192,79 @@ void Motor_Step(axis_t axis1, motor_dir_t dir, uint32_t steps)
     }
 }
 
+// -----------------------------------------------------------------------------
+// Reset The Claw's Height Using the Z Limit Switch
+// -----------------------------------------------------------------------------
+void Reset_Height (void) {
+    uint8_t zlim;
+    Z_Limit_Checker(&zlim);
+
+    while (!zlim) {
+        Z_Limit_Checker(&zlim);
+        Motor_MoveZ(DIR_BACKWARD, 10);
+    }
+
+    while(zlim) {
+        Motor_MoveZ(DIR_FORWARD, 100);
+        Z_Limit_Checker(&zlim);
+    }
+}
+
+// -----------------------------------------------------------------------------
+// X Limit switch helper
+// -----------------------------------------------------------------------------
+void X_Limit_Checker(uint8_t dir, uint8_t *xlim_prev)
+{
+    uint8_t xlim_current;
+
+    xlim_current = ((X_LIMIT_GPIO->IDR & (1 << X_LIMIT_PIN)) == 0);
+
+    if (!xlim_current && *xlim_prev) {
+        *xlim_prev = LIM_NONE;
+    }
+    else if (xlim_current && dir == DIR_FORWARD && !(*xlim_prev)) {
+        *xlim_prev = LIM_POS;
+    }
+    else if (xlim_current && dir == DIR_BACKWARD && !(*xlim_prev)) {
+        *xlim_prev = LIM_NEG;
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Y Limit switch helper
+// -----------------------------------------------------------------------------
+void Y_Limit_Checker(uint8_t dir, uint8_t *ylim_prev)
+{
+    uint8_t ylim_current;
+
+    ylim_current = ((Y_LIMIT_GPIO->IDR & (1 << Y_LIMIT_PIN)) == 0);
+
+    if (!ylim_current && *ylim_prev) {
+        *ylim_prev = LIM_NONE;
+    }
+    else if (ylim_current && dir == DIR_FORWARD && !(*ylim_prev)) {
+        *ylim_prev = LIM_POS;
+    }
+    else if (ylim_current && dir == DIR_BACKWARD && !(*ylim_prev)) {
+        *ylim_prev = LIM_NEG;
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Z Limit switch helper
+// -----------------------------------------------------------------------------
+void Z_Limit_Checker(uint8_t *zlim)
+{
+    *zlim = ((Z_LIMIT_GPIO->IDR & (1 << Z_LIMIT_PIN)) == 0);
+}
+
 void Claw_Grab_Token(void) {
+    Motor_MoveClaw(DIR_FORWARD, OPEN_STEPS);
+    delay_ms(300);
     Motor_MoveZ(DIR_FORWARD, LOWER_STEPS);
-    Motor_MoveClaw(DIR_FORWARD, CLOSE_STEPS);
-    Motor_MoveZ(DIR_BACKWARD, RAISE_STEPS);
+    delay_ms(1000);
+    Motor_MoveClaw(DIR_BACKWARD, CLOSE_STEPS);
+    Reset_Height();
 }
 
 void Claw_Drop_Token(void) {

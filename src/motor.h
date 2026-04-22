@@ -22,11 +22,15 @@
 #define MOTOR_STEPS_PER_REV 200
 
 // Default step pulse width in microseconds (DRV8825 min is 1.9us, use 5 to be safe)
-#define MOTOR_PULSE_US      5
+#define MOTOR_PULSE_US      20
 
 // Default step delay between pulses (controls speed, lower = faster)
 // 1000us = 1ms between steps, tune per axis
 #define MOTOR_STEP_DELAY_US 1000
+
+#define LIM_NONE 0
+#define LIM_POS  1
+#define LIM_NEG  2
 
 // -----------------------------------------------------------------------------
 // Axis definitions
@@ -76,5 +80,9 @@ void Motor_MoveClaw(motor_dir_t dir, uint32_t steps);
 void Motor_MoveXZ(motor_dir_t dir, uint32_t steps);
 void Claw_Drop_Token(void);
 void Claw_Grab_Token(void);
+void X_Limit_Checker(uint8_t dir, uint8_t *xlim_prev);
+void Y_Limit_Checker(uint8_t dir, uint8_t *ylim_prev);
+void Z_Limit_Checker(uint8_t *zlim);
+void Reset_Height(void);
 
 #endif
