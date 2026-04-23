@@ -452,7 +452,7 @@ static cell_state_t classify_color_from_counts(uint32_t cR, uint32_t cG, uint32_
     uint32_t sum = cR + cG + cB;
 
     // In your measurements, AIR has the largest total reading
-    if (sum > TCS_EMPTY_SUM_THRESHOLD) {
+    if (sum > TCS_EMPTY_SUM_THRESHOLD && cG > 280) {
         return CELL_EMPTY;
     }
 
@@ -466,7 +466,7 @@ static cell_state_t classify_color_from_counts(uint32_t cR, uint32_t cG, uint32_
         return CELL_PLAYER2_BLUE;
     }
 
-    return CELL_UNKNOWN;
+    return CELL_EMPTY;
 }
 
 void Joystick_Test(void)
@@ -512,25 +512,25 @@ void Joystick_and_Motor_Test(void)
     while (1) {
         Joystick_Read(&x, &y, &pressed);
 
-        // if (x > y && x > 3000) {
-        //     Motor_Step(AXIS_X, DIR_FORWARD, 10);
-        // }
-        // else if (y > x && y > 3000) {
-        //     Motor_Step(AXIS_Y, DIR_FORWARD, 10);
-        // }
-        // else if (x < y && x < 1500) {
-        //     Motor_Step(AXIS_X, DIR_BACKWARD, 10);
-        // }
-        // else if (y < x && y < 1500) {
-        //     Motor_Step(AXIS_Y, DIR_BACKWARD, 10);
-        // }
-        // else if (pressed) {
-        //     Motor_Step(AXIS_Z, DIR_FORWARD, 10);
-        // }
-        while (pressed) {
-            Motor_MoveZ(DIR_FORWARD, 50);
-            delay_ms(100);
+        if (x > y && x > 3000) {
+            Motor_Step(AXIS_X, DIR_FORWARD, 10);
         }
+        else if (y > x && y > 3000) {
+            Motor_Step(AXIS_Y, DIR_FORWARD, 10);
+        }
+        else if (x < y && x < 1500) {
+            Motor_Step(AXIS_X, DIR_BACKWARD, 10);
+        }
+        else if (y < x && y < 1500) {
+            Motor_Step(AXIS_Y, DIR_BACKWARD, 10);
+        }
+        else if (pressed) {
+            Motor_Step(AXIS_Z, DIR_FORWARD, 10);
+        }
+        // while (pressed) {
+        //     Motor_MoveZ(DIR_FORWARD, 50);
+        //     delay_ms(100);
+        // }
 
         // delay_ms(0.001);
     }
@@ -572,8 +572,8 @@ int main(void)
     Joystick_ADC_Init();
     TCS_Init();
     Motor_Init();
-    Game_Init();
     Motor_Enable();
+    Game_Init();
     delay_ms(20);
     
  #if DEBUG_SENSOR_SCREEN
@@ -674,9 +674,7 @@ int main(void)
     // while (!pressed) {
     //     Joystick_Read(&x,&y,&pressed);
     // }
-    // Reset_Height();
-    // delay_ms(1000);
-    // Claw_Grab_Token();
+    // Joystick_and_Motor_Test();
         
     while(1) {
         Game_Update();

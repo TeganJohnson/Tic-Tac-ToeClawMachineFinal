@@ -9,7 +9,7 @@ extern void delay_ms(uint32_t ms);
 // -----------------------------------------------------------------------------
 // Number of Steps to Lower/Raise to/from the Play Area
 // -----------------------------------------------------------------------------
-#define LOWER_STEPS 1400
+#define LOWER_STEPS 1100
 #define RAISE_STEPS 400
 
 // -----------------------------------------------------------------------------
@@ -21,7 +21,7 @@ extern void delay_ms(uint32_t ms);
 // -----------------------------------------------------------------------------
 // Number of Steps to Set the Drop Height
 // -----------------------------------------------------------------------------
-#define DROP_STEPS 0
+#define DROP_STEPS 550
 #define DROP_RAISE_STEPS 0
 
 #define X_LIMIT_GPIO GPIOB
@@ -272,11 +272,13 @@ void Claw_Drop_Token(void) {
         Motor_MoveZ(DIR_FORWARD, DROP_STEPS);
     }
 
-    Motor_MoveClaw(DIR_BACKWARD, OPEN_STEPS);
+    Motor_MoveClaw(DIR_FORWARD, OPEN_STEPS);
 
     if (DROP_STEPS != 0) {
-        Motor_MoveZ(DIR_BACKWARD, DROP_RAISE_STEPS);
+        Reset_Height();
     }
+
+    Motor_MoveClaw(DIR_BACKWARD, CLOSE_STEPS);
 }
  
 //wrappers

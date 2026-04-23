@@ -173,6 +173,32 @@ void LCD_DrawString(uint16_t x, uint16_t y, const char *str, uint16_t color, uin
     }
 }
 
+static void LCD_DrawCheckingGrid(void)
+{
+    LCD_FillRect(79, 70, 4, 126, COLOR_WHITE);
+    LCD_FillRect(159, 70, 4, 126, COLOR_WHITE);
+    LCD_FillRect(40, 109, 202, 4, COLOR_WHITE);
+    LCD_FillRect(40, 153, 202, 4, COLOR_WHITE);
+}
+
+static void LCD_DrawCheckingCell(uint8_t cell_index, uint8_t cell_value)
+{
+    static const uint16_t cell_x[9] = {40, 84, 164, 40, 84, 164, 40, 84, 164};
+    static const uint16_t cell_y[9] = {70, 70, 70, 114, 114, 114, 158, 158, 158};
+    const uint16_t width = 39;
+    const uint16_t height = 39;
+    const uint16_t text_x = cell_x[cell_index] + 10;
+    const uint16_t text_y = cell_y[cell_index] + 5;
+
+    LCD_FillRect(cell_x[cell_index], cell_y[cell_index], width, height, COLOR_BLACK);
+
+    if (cell_value == PLAYER_1) {
+        LCD_DrawString(text_x, text_y, "X", COLOR_RED, COLOR_BLACK, 4);
+    } else if (cell_value == PLAYER_2) {
+        LCD_DrawString(text_x, text_y, "O", COLOR_BLUE, COLOR_BLACK, 4);
+    }
+}
+
 // ----------------------------------------------------
 // Game screens
 // ----------------------------------------------------
@@ -229,6 +255,20 @@ void Display_ShowPlayerTurn_Drop(player_t player, uint32_t time_remaining_ms, ui
     LCD_DrawString(140, 100, time_str, COLOR_YELLOW, COLOR_BLACK, 3);
 }
 
+
+void Display_ShowPlayerTurn_Idle(player_t player)
+{
+    if (player == PLAYER_1) {
+        LCD_FillColor(COLOR_RED);
+        LCD_DrawString(40, 40, "PLAYER 1 TURN", COLOR_WHITE, COLOR_BLACK, 2);
+        LCD_DrawString(20, 230, "PRESS TO START", COLOR_WHITE, COLOR_BLACK, 2);
+    } else {
+        LCD_FillColor(COLOR_BLUE);
+        LCD_DrawString(40, 40, "PLAYER 2 TURN", COLOR_WHITE, COLOR_BLACK, 2);
+        LCD_DrawString(20, 230, "PRESS TO START", COLOR_WHITE, COLOR_BLACK, 2);
+    }
+}
+
 //Grab Function
 void Display_ShowPlayerTurn_Grab(player_t player, uint32_t time_remaining_ms, uint8_t bg)
 {
@@ -237,13 +277,13 @@ void Display_ShowPlayerTurn_Grab(player_t player, uint32_t time_remaining_ms, ui
         LCD_FillColor(COLOR_RED);
         LCD_DrawString(40, 40, "PLAYER 1 TURN", COLOR_WHITE, COLOR_BLACK, 2);
         LCD_DrawString(30, 200, "USE JOYSTICK", COLOR_WHITE, COLOR_BLACK, 2);
-        LCD_DrawString(20, 230, "PRESS TO Grab", COLOR_WHITE, COLOR_BLACK, 2);
+        LCD_DrawString(20, 230, "PRESS TO GRAB", COLOR_WHITE, COLOR_BLACK, 2);
         LCD_DrawString(60, 100, "TIME:", COLOR_WHITE, COLOR_BLACK, 3);
     } else if (bg) {
         LCD_FillColor(COLOR_BLUE);
         LCD_DrawString(40, 40, "PLAYER 2 TURN", COLOR_WHITE, COLOR_BLACK, 2);
         LCD_DrawString(30, 200, "USE JOYSTICK", COLOR_WHITE, COLOR_BLACK, 2);
-        LCD_DrawString(20, 230, "PRESS TO Grab", COLOR_WHITE, COLOR_BLACK, 2);
+        LCD_DrawString(20, 230, "PRESS TO GRAB", COLOR_WHITE, COLOR_BLACK, 2);
         LCD_DrawString(60, 100, "TIME:", COLOR_WHITE, COLOR_BLACK, 3);
     }
 
@@ -258,11 +298,19 @@ void Display_ShowPlayerTurn_Grab(player_t player, uint32_t time_remaining_ms, ui
     LCD_DrawString(140, 100, time_str, COLOR_YELLOW, COLOR_BLACK, 3);
 }
 
-void Display_ShowCheckingBoard(void)
+void Display_ShowCheckingBoard(const uint8_t board[9], uint8_t bg)
 {
-    LCD_FillColor(COLOR_BLACK);
-    LCD_DrawStringCentered("CHECKING", COLOR_YELLOW, COLOR_BLACK, 3);
-    LCD_DrawString(50, 180, "BOARD STATE", COLOR_WHITE, COLOR_BLACK, 2);
+    if (bg) {
+        LCD_FillColor(COLOR_BLACK);
+        LCD_DrawString(48, 20, "BOARD CHECK", COLOR_YELLOW, COLOR_BLACK, 3);
+        LCD_DrawString(24, 220, "PRESS BUTTON", COLOR_WHITE, COLOR_BLACK, 2);
+        LCD_DrawString(30, 246, "TO CONTINUE", COLOR_WHITE, COLOR_BLACK, 2);
+        LCD_DrawCheckingGrid();
+    }
+
+    for (uint8_t i = 0; i < 9; i++) {
+        LCD_DrawCheckingCell(i, board[i]);
+    }
 }
 
 void Display_ShowWinner(player_t winner)

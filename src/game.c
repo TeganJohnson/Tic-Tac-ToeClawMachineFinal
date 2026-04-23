@@ -15,7 +15,7 @@ extern void Hardware_ScanBoard(uint8_t scanned_board[9]);
 extern void Display_ShowIdleScreen(void);
 extern void Display_ShowPlayerTurn_Grab(player_t player, uint32_t time_remaining_ms, uint8_t bg);
 extern void Display_ShowPlayerTurn_Drop(player_t player, uint32_t time_remaining_ms, uint8_t bg);
-extern void Display_ShowCheckingBoard(void);
+extern void Display_ShowCheckingBoard(const uint8_t board[9], uint8_t bg);
 extern void Display_ShowWinner(player_t winner);
 extern void Display_ShowDraw(void);
 
@@ -55,6 +55,8 @@ extern void Claw_Drop_Token(void);
 #define DIR_BACKWARD 1
 #endif
 
+#define Motors 1
+
 // -----------------------------------------------------------------------------
 // Static game context
 // -----------------------------------------------------------------------------
@@ -80,6 +82,7 @@ static const uint8_t win_lines[8][3] = {
 static uint8_t Idle_IsDisplayed = 0;
 static uint8_t remaining_prev_sec = 0xFF;
 static uint8_t button_was_down = 1;   // start latched to avoid boot glitches
+static uint8_t check_board_screen_initialized = 0;
 
 // -----------------------------------------------------------------------------
 // Limit and direction tracking
@@ -267,7 +270,7 @@ static void Game_ChangeState(game_state_t new_state)
     case STATE_CHECK_BOARD:
         remaining_prev_sec = 0xFF;
         button_was_down = 1;
-        Display_ShowCheckingBoard();
+        check_board_screen_initialized = 0;
         break;
 
     case STATE_PLAYER1_WIN:
@@ -332,6 +335,9 @@ static void Handle_IdleState(void)
     if (Button_JustPressed()) {
         Board_Init();
         game.active_player = PLAYER_1;
+        #ifdef Motors
+            Reset_Height();
+        #endif
         Game_ChangeState(STATE_PLAYER1_TURN_GRAB);
     }
 
@@ -370,7 +376,9 @@ static void Handle_PlayerTurnState_Grab(void)
 
     if (pressed && !button_was_down) {
         button_was_down = 1;
-        Claw_Grab_Token();
+        #ifdef Motors
+            Claw_Grab_Token();
+        #endif
 
         if (game.active_player == PLAYER_1) {
             Game_ChangeState(STATE_PLAYER1_TURN_DROP);
@@ -385,7 +393,9 @@ static void Handle_PlayerTurnState_Grab(void)
     }
 
     if (elapsed >= PLAYER_TURN_TIME_MS) {
-        Claw_Grab_Token();
+        #ifdef Motors
+            Claw_Grab_Token();
+        #endif
 
         if (game.active_player == PLAYER_1) {
             Game_ChangeState(STATE_PLAYER1_TURN_DROP);
@@ -417,7 +427,9 @@ static void Handle_PlayerTurnState_Drop(void)
 
     if (pressed && !button_was_down) {
         button_was_down = 1;
-        Claw_Drop_Token();
+        #ifdef Motors
+            Claw_Drop_Token();
+        #endif
         Game_ChangeState(STATE_CHECK_BOARD);
         return;
     }
@@ -427,7 +439,9 @@ static void Handle_PlayerTurnState_Drop(void)
     }
 
     if (elapsed >= PLAYER_TURN_TIME_MS) {
-        Claw_Drop_Token();
+        #ifdef Motors
+            Claw_Drop_Token();
+        #endif
         Game_ChangeState(STATE_CHECK_BOARD);
         return;
     }
@@ -436,6 +450,12 @@ static void Handle_PlayerTurnState_Drop(void)
 static void Handle_CheckBoardState(void)
 {
     Board_UpdateFromScan();
+    Display_ShowCheckingBoard(game.board, !check_board_screen_initialized);
+    check_board_screen_initialized = 1;
+
+    if (!Button_JustPressed()) {
+        return;
+    }
 
     player_t winner = Board_CheckWinner();
 
@@ -459,6 +479,8 @@ static void Handle_CheckBoardState(void)
     } else {
         Game_ChangeState(STATE_PLAYER1_TURN_GRAB);
     }
+
+    
 }
 
 static void Handle_EndState(void)

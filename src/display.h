@@ -24,9 +24,10 @@ void LCD_DrawString(uint16_t x, uint16_t y, const char *str, uint16_t color, uin
 void Display_ShowIdleScreen(void);
 void Display_ShowPlayerTurn_Grab(player_t player, uint32_t time_remaining_ms, uint8_t bg);
 void Display_ShowPlayerTurn_Drop(player_t player, uint32_t time_remaining_ms, uint8_t bg);
-void Display_ShowCheckingBoard(void);
+void Display_ShowCheckingBoard(const uint8_t board[9], uint8_t bg);
 void Display_ShowWinner(player_t winner);
 void Display_ShowDraw(void);
 void Display_Current_Timer(uint32_t time_remaining_ms);
+void Display_ShowPlayerTurn_Idle(player_t player);
 
 #endif

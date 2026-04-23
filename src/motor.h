@@ -22,7 +22,7 @@
 #define MOTOR_STEPS_PER_REV 200
 
 // Default step pulse width in microseconds (DRV8825 min is 1.9us, use 5 to be safe)
-#define MOTOR_PULSE_US      20
+#define MOTOR_PULSE_US      5
 
 // Default step delay between pulses (controls speed, lower = faster)
 // 1000us = 1ms between steps, tune per axis
