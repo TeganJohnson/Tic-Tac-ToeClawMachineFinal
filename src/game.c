@@ -296,7 +296,7 @@ static void Game_ChangeState(game_state_t new_state)
 
 static void Update_Timer(uint8_t direction)
 {
-    if (direction == 1) {
+    if (direction == 0) {
         if (PLAYER_TURN_TIME_MS < 60000U) {
             PLAYER_TURN_TIME_MS += 15000U;
 
@@ -449,9 +449,11 @@ static void Handle_PlayerTurnState_Drop(void)
 
 static void Handle_CheckBoardState(void)
 {
-    Board_UpdateFromScan();
-    Display_ShowCheckingBoard(game.board, !check_board_screen_initialized);
-    check_board_screen_initialized = 1;
+    if (!check_board_screen_initialized) {
+        Board_UpdateFromScan();
+        Display_ShowCheckingBoard(game.board, 1);
+        check_board_screen_initialized = 1;
+    }
 
     if (!Button_JustPressed()) {
         return;

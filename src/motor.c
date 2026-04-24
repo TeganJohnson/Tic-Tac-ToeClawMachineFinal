@@ -9,20 +9,20 @@ extern void delay_ms(uint32_t ms);
 // -----------------------------------------------------------------------------
 // Number of Steps to Lower/Raise to/from the Play Area
 // -----------------------------------------------------------------------------
-#define LOWER_STEPS 1100
+#define LOWER_STEPS 1200
 #define RAISE_STEPS 400
 
 // -----------------------------------------------------------------------------
 // Number of Steps to Close/Open the Claw
 // -----------------------------------------------------------------------------
-#define CLOSE_STEPS 200
+#define CLOSE_STEPS 150
 #define OPEN_STEPS 70
 
 // -----------------------------------------------------------------------------
 // Number of Steps to Set the Drop Height
 // -----------------------------------------------------------------------------
-#define DROP_STEPS 550
-#define DROP_RAISE_STEPS 0
+#define DROP_STEPS 800
+#define DROP_RAISE_STEPS 0 //Unused in most recent versions
 
 #define X_LIMIT_GPIO GPIOB
 #define X_LIMIT_PIN 3
@@ -39,8 +39,8 @@ extern void delay_ms(uint32_t ms);
 
 // -----------------------------------------------------------------------------
 // Microsecond busy-wait
-// Assumes 8MHz system clock. Adjust cycle count if clock changes.
-// Each loop iteration ~ 4 cycles at 8MHz = 0.5us, so 2 iterations ~ 1us.
+// Assumes 8MHz system clock. Adjust cycle count if clock changes. -- Adjusted to 6X more due to 48MHz Clock
+// Each loop iteration ~ 4 cycles at 8MHz = 0.5us, so 2 iterations ~= 1us.
 // -----------------------------------------------------------------------------
 static void delay_us(uint32_t us)
 {

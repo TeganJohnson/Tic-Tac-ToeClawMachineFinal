@@ -177,13 +177,13 @@ static void LCD_DrawCheckingGrid(void)
 {
     LCD_FillRect(79, 70, 4, 126, COLOR_WHITE);
     LCD_FillRect(159, 70, 4, 126, COLOR_WHITE);
-    LCD_FillRect(40, 109, 202, 4, COLOR_WHITE);
-    LCD_FillRect(40, 153, 202, 4, COLOR_WHITE);
+    LCD_FillRect(40, 109, 165, 4, COLOR_WHITE);
+    LCD_FillRect(40, 153, 165, 4, COLOR_WHITE);
 }
 
 static void LCD_DrawCheckingCell(uint8_t cell_index, uint8_t cell_value)
 {
-    static const uint16_t cell_x[9] = {40, 84, 164, 40, 84, 164, 40, 84, 164};
+    static const uint16_t cell_x[9] = {40, 102, 164, 40, 102, 164, 40, 102, 164};
     static const uint16_t cell_y[9] = {70, 70, 70, 114, 114, 114, 158, 158, 158};
     const uint16_t width = 39;
     const uint16_t height = 39;

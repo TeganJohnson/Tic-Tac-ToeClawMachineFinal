@@ -13,6 +13,8 @@
 
 #define DEBUG_SENSOR_SCREEN 0
 
+#define DEBUG_JOYSTICK_SCREEN 0
+
 #define LCD_CS_GPIO     GPIOB
 #define LCD_CS_PIN      0
 #define LCD_RST_GPIO    GPIOC
@@ -482,6 +484,33 @@ void Joystick_Test(void)
     while (1) {
         Joystick_Read(&x, &y, &pressed);
 
+         if (pressed) {
+            LCD_FillRect(10, 92, 200, 15, COLOR_BLACK);
+            LCD_DrawString(10, 92, "Button: PRESSED", COLOR_YELLOW, COLOR_BLACK, 2);
+         }
+        else LCD_DrawString(10, 92, "Button: released", COLOR_WHITE, COLOR_BLACK, 2);
+
+        if (x > y && x > 3000) {
+            LCD_FillRect(10, 132, 200, 15, COLOR_BLACK);
+            LCD_DrawString(10, 132, "LEFT X", COLOR_YELLOW, COLOR_BLACK, 2);
+        
+        }
+        else if (y > x && y > 3000) {
+            LCD_FillRect(10, 132, 200, 15, COLOR_BLACK);
+            LCD_DrawString(10, 132, "BACKWARD Y", COLOR_YELLOW, COLOR_BLACK, 2);
+        }
+        else if (x < y && x < 1500) {
+            LCD_FillRect(10, 132, 200, 15, COLOR_BLACK);
+            LCD_DrawString(10, 132, "RIGHT X", COLOR_YELLOW, COLOR_BLACK, 2);
+        }
+        else if (y < x && y < 1500) {
+            LCD_FillRect(10, 132, 200, 15, COLOR_BLACK);
+            LCD_DrawString(10, 132, "FORWARD Y", COLOR_YELLOW, COLOR_BLACK, 2);
+        }
+        else {
+            LCD_FillRect(10, 132, 200, 15, COLOR_BLACK);
+            LCD_DrawString(10, 132, "NO Threshold", COLOR_WHITE, COLOR_BLACK, 2);
+        }
         // Draw X value
         LCD_FillRect(10, 40, 100, 18, COLOR_BLACK);
         u16_to_str(x, s);
@@ -496,8 +525,6 @@ void Joystick_Test(void)
 
         // Draw button state
         LCD_FillRect(10, 92, 180, 20, COLOR_BLACK);
-        if (pressed) LCD_DrawString(10, 92, "Button: PRESSED", COLOR_YELLOW, COLOR_BLACK, 2);
-        else LCD_DrawString(10, 92, "Button: released", COLOR_WHITE, COLOR_BLACK, 2);
 
         delay_ms(1);
     }
@@ -575,6 +602,10 @@ int main(void)
     Motor_Enable();
     Game_Init();
     delay_ms(20);
+
+#if DEBUG_JOYSTICK_SCREEN
+    Joystick_Test();
+#endif
     
  #if DEBUG_SENSOR_SCREEN
 
